@@ -1,0 +1,59 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const { category } = Astro.params;
+
+// 🔹 Carrega todos os posts
+const posts = await getCollection("blog");
+
+// 🔹 Filtra apenas os que correspondem à categoria
+const filtered = posts.filter(
+  p =>
+    p.data.category &&
+    p.data.category.toLowerCase().replace(/\s+/g, "-") === category
+);
+
+// 🔹 Idiomas suportados
+const labels = {
+  en: { title: "Category", none: "No posts in this category." },
+  es: { title: "Categoría", none: "No hay publicaciones en esta categoría." },
+  pt: { title: "Categoria", none: "Nenhum post nesta categoria." },
+};
+
+const lang = "pt"; // "en", "es" ou "pt"
+const L = labels[lang] || labels.en;
+
+const title = `${L.title}: ${category}`;
+---
+
+<Base title={title}>
+  <section style="padding: 2rem;">
+    <h1 style="text-align:center;">{title}</h1>
+
+    {filtered.length === 0 ? (
+      <p style="text-align:center;">{L.none}</p>
+    ) : (
+      <ul
+        style="
+          list-style:none;
+          display:grid;
+          gap:1rem;
+          max-width:600px;
+          margin:2rem auto;
+        "
+      >
+        {filtered.map(post => (
+          <li>
+            <a
+              href={`/blog/${post.slug}/`}
+              style="text-decoration:none;color:var(--accent);font-weight:600;"
+            >
+              {post.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</Base>
