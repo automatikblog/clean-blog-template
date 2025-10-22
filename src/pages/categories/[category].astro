@@ -2,17 +2,41 @@
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 
+// 🔹 Gera as rotas estáticas com base nas categorias existentes
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  let categories = [
+    ...new Set(
+      posts
+        .map(p => p.data.category)
+        .filter(Boolean)
+        .map(c => c.trim().toLowerCase().replace(/\s+/g, "-"))
+    ),
+  ];
+
+  // 🔸 Se não houver categorias, cria uma padrão
+  if (categories.length === 0) {
+    categories = ["blog"];
+  }
+
+  return categories.map(category => ({
+    params: { category },
+  }));
+}
+
+// 🔹 Obtém a categoria da URL
 const { category } = Astro.params;
 
-// 🔹 Carrega todos os posts
+// 🔹 Carrega e filtra os posts dessa categoria (ou mostra todos se for "blog")
 const posts = await getCollection("blog");
-
-// 🔹 Filtra apenas os que correspondem à categoria
-const filtered = posts.filter(
-  p =>
-    p.data.category &&
-    p.data.category.toLowerCase().replace(/\s+/g, "-") === category
-);
+const filtered =
+  category === "blog"
+    ? posts
+    : posts.filter(
+        p =>
+          p.data.category &&
+          p.data.category.toLowerCase().replace(/\s+/g, "-") === category
+      );
 
 // 🔹 Idiomas suportados
 const labels = {
@@ -23,7 +47,6 @@ const labels = {
 
 const lang = "pt"; // "en", "es" ou "pt"
 const L = labels[lang] || labels.en;
-
 const title = `${L.title}: ${category}`;
 ---
 
