@@ -1,27 +1,18 @@
-import { getCollection } from "astro:content";
+import fs from "fs";
+import path from "path";
 
 export async function GET() {
-  const posts = await getCollection("blog");
+  // Caminho absoluto até o arquivo JSON de categorias
+  const filePath = path.resolve("src/data/categories.json");
 
-  let categories = [
-    ...new Set(
-      posts
-        .map(p => p.data.category)
-        .filter(Boolean)
-        .map(c => c.trim())
-    ),
-  ];
+  // Lê o conteúdo do arquivo
+  const data = fs.readFileSync(filePath, "utf-8");
 
-  // Se não houver nenhuma categoria, cria “Blog” padrão
-  if (categories.length === 0) categories = ["Blog"];
+  // Converte o conteúdo em JSON
+  const categories = JSON.parse(data);
 
-  // Monta array de objetos com slug e nome
-  const output = categories.map(c => ({
-    name: c,
-    slug: c.toLowerCase().replace(/\s+/g, "-"),
-  }));
-
-  return new Response(JSON.stringify(output), {
+  // Retorna a resposta em formato JSON (pra ser consumida no menu ou no site)
+  return new Response(JSON.stringify(categories), {
     headers: { "Content-Type": "application/json" },
   });
 }
