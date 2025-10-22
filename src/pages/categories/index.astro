@@ -2,18 +2,21 @@
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 
-// 🔹 Carrega todos os posts do tipo "blog"
+// 🔹 Carrega todos os posts
 const posts = await getCollection("blog");
 
-// 🔹 Extrai as categorias únicas
-const categories = [
+// 🔹 Extrai as categorias únicas ou cria "blog" se nenhuma existir
+let categories = [
   ...new Set(
     posts
       .map(p => p.data.category)
       .filter(Boolean)
       .map(c => c.trim())
-  )
+  ),
 ];
+if (categories.length === 0) {
+  categories = ["Blog"];
+}
 
 // 🔹 Idiomas suportados
 const labels = {
@@ -22,7 +25,6 @@ const labels = {
   pt: { title: "Categorias", none: "Nenhuma categoria encontrada." },
 };
 
-// 🔹 Escolhe idioma (ajusta manualmente ou via automação)
 const lang = "pt"; // "en", "es" ou "pt"
 const L = labels[lang] || labels.en;
 ---
@@ -31,30 +33,26 @@ const L = labels[lang] || labels.en;
   <section style="padding: 2rem;">
     <h1 style="text-align:center;">{L.title}</h1>
 
-    {categories.length === 0 ? (
-      <p style="text-align:center;">{L.none}</p>
-    ) : (
-      <ul
-        style="
-          list-style:none;
-          display:flex;
-          flex-wrap:wrap;
-          gap:1rem;
-          justify-content:center;
-          margin-top:2rem;
-        "
-      >
-        {categories.map(cat => (
-          <li>
-            <a
-              href={`/categories/${cat.toLowerCase().replace(/\s+/g, "-")}/`}
-              style="text-decoration:none;color:var(--accent);font-weight:600;"
-            >
-              {cat}
-            </a>
-          </li>
-        ))}
-      </ul>
-    )}
+    <ul
+      style="
+        list-style:none;
+        display:flex;
+        flex-wrap:wrap;
+        gap:1rem;
+        justify-content:center;
+        margin-top:2rem;
+      "
+    >
+      {categories.map(cat => (
+        <li>
+          <a
+            href={`/categories/${cat.toLowerCase().replace(/\s+/g, "-")}/`}
+            style="text-decoration:none;color:var(--accent);font-weight:600;"
+          >
+            {cat}
+          </a>
+        </li>
+      ))}
+    </ul>
   </section>
 </Base>
