@@ -1,82 +1,74 @@
 ---
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
+import FormattedDate from "../../components/FormattedDate.astro";
 
-// 🔹 Gera as rotas estáticas com base nas categorias existentes
-export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  let categories = [
-    ...new Set(
-      posts
-        .map(p => p.data.category)
-        .filter(Boolean)
-        .map(c => c.trim().toLowerCase().replace(/\s+/g, "-"))
-    ),
-  ];
-
-  // 🔸 Se não houver categorias, cria uma padrão
-  if (categories.length === 0) {
-    categories = ["blog"];
-  }
-
-  return categories.map(category => ({
-    params: { category },
-  }));
-}
-
-// 🔹 Obtém a categoria da URL
 const { category } = Astro.params;
-
-// 🔹 Carrega e filtra os posts dessa categoria (ou mostra todos se for "blog")
 const posts = await getCollection("blog");
-const filtered =
-  category === "blog"
-    ? posts
-    : posts.filter(
-        p =>
-          p.data.category &&
-          p.data.category.toLowerCase().replace(/\s+/g, "-") === category
-      );
 
-// 🔹 Idiomas suportados
+// Filtra posts com categoria igual ao slug
+const filtered = posts.filter(
+  p =>
+    p.data.category &&
+    p.data.category.toLowerCase().replace(/\s+/g, "-") === category
+);
+
 const labels = {
   en: { title: "Category", none: "No posts in this category." },
   es: { title: "Categoría", none: "No hay publicaciones en esta categoría." },
   pt: { title: "Categoria", none: "Nenhum post nesta categoria." },
 };
 
-const lang = "pt"; // "en", "es" ou "pt"
+const lang = "pt";
 const L = labels[lang] || labels.en;
 const title = `${L.title}: ${category}`;
 ---
 
 <Base title={title}>
-  <section style="padding: 2rem;">
-    <h1 style="text-align:center;">{title}</h1>
+  <section style="padding: 3rem 1rem;">
+    <h1 style="text-align:center; font-size:2rem; font-weight:700;">{title}</h1>
 
     {filtered.length === 0 ? (
-      <p style="text-align:center;">{L.none}</p>
+      <p style="text-align:center; margin-top:2rem;">{L.none}</p>
     ) : (
-      <ul
+      <div
         style="
-          list-style:none;
-          display:grid;
-          gap:1rem;
-          max-width:600px;
-          margin:2rem auto;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+          margin-top: 2rem;
+          max-width: 1100px;
+          margin-left: auto;
+          margin-right: auto;
         "
       >
         {filtered.map(post => (
-          <li>
-            <a
-              href={`/blog/${post.slug}/`}
-              style="text-decoration:none;color:var(--accent);font-weight:600;"
-            >
-              {post.data.title}
-            </a>
-          </li>
+          <article style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;">
+            {post.data.heroImage && (
+              <a href={`/blog/${post.slug}/`}>
+                <img
+                  src={post.data.heroImage}
+                  alt={post.data.title}
+                  style="width:100%; height:180px; object-fit:cover;"
+                />
+              </a>
+            )}
+            <div style="padding:1rem;">
+              <h2 style="margin:0;">
+                <a
+                  href={`/blog/${post.slug}/`}
+                  style="color: var(--accent); text-decoration:none; font-weight:600;"
+                >
+                  {post.data.title}
+                </a>
+              </h2>
+              <p style="color: gray; font-size:0.9rem; margin-top:0.4rem;">
+                <FormattedDate date={post.data.pubDate} />
+              </p>
+            </div>
+          </article>
         ))}
-      </ul>
+      </div>
     )}
   </section>
 </Base>
