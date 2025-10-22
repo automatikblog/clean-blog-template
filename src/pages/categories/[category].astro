@@ -2,33 +2,10 @@
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 import FormattedDate from "../../components/FormattedDate.astro";
+import fs from "fs";
 
-// gera as páginas dinamicamente para cada categoria existente
-export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  const categories = [
-    ...new Set(
-      posts
-        .map(p => p.data.category)
-        .filter(Boolean)
-        .map(c => c.trim().toLowerCase().replace(/\s+/g, "-"))
-    ),
-  ];
-
-  // se não houver categoria, cria apenas "blog"
-  if (categories.length === 0) return [{ params: { category: "blog" } }];
-
-  return categories.map(cat => ({ params: { category: cat } }));
-}
-
-// capturar categoria e posts filtrados
-const { category } = Astro.params;
-const posts = await getCollection("blog");
-const filtered = posts.filter(
-  p =>
-    p.data.category &&
-    p.data.category.toLowerCase().replace(/\s+/g, "-") === category
-);
+// 🚀 Ativa modo dinâmico (sem rebuild)
+export const prerender = false;
 
 // textos multilíngues
 const labels = {
@@ -37,9 +14,46 @@ const labels = {
   pt: { title: "Categoria", none: "Nenhum post nesta categoria." },
 };
 
+// capturar categoria da URL
+const { category } = Astro.params;
 const lang = "pt";
 const L = labels[lang] || labels.en;
-const title = `${L.title}: ${category}`;
+
+// lê categorias do JSON atualizado
+let categories = [];
+try {
+  const json = fs.readFileSync("src/data/categories.json", "utf-8");
+  categories = JSON.parse(json);
+} catch (err) {
+  console.error("Erro ao ler categories.json", err);
+}
+
+// encontra categoria correspondente
+const currentCat = categories.find(
+  (c) => c.slug.toLowerCase() === category.toLowerCase()
+);
+
+// se não encontrar categoria
+if (!currentCat) {
+  return new Response(
+    `<h1 style="text-align:center;margin-top:4rem;">${L.title}: ${category}</h1>
+     <p style="text-align:center;">${L.none}</p>`,
+    { headers: { "Content-Type": "text/html" }, status: 404 }
+  );
+}
+
+// obtém posts em tempo real
+const posts = await getCollection("blog");
+
+// filtra os posts por categoria
+const filtered = posts.filter(
+  (p) =>
+    p.data.category &&
+    p.data.category.toLowerCase().replace(/\s+/g, "-") ===
+      currentCat.slug.toLowerCase()
+);
+
+const title = `${L.title}: ${currentCat.name}`;
 ---
 
 <Base title={title}>
@@ -60,7 +74,7 @@ const title = `${L.title}: ${category}`;
           margin-right: auto;
         "
       >
-        {filtered.map(post => (
+        {filtered.map((post) => (
           <article style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;">
             {post.data.heroImage && (
               <a href={`/${post.slug}/`}>
