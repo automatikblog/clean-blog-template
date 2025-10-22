@@ -3,16 +3,34 @@ import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 import FormattedDate from "../../components/FormattedDate.astro";
 
+// gera as páginas dinamicamente para cada categoria existente
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const categories = [
+    ...new Set(
+      posts
+        .map(p => p.data.category)
+        .filter(Boolean)
+        .map(c => c.trim().toLowerCase().replace(/\s+/g, "-"))
+    ),
+  ];
+
+  // se não houver categoria, cria apenas "blog"
+  if (categories.length === 0) return [{ params: { category: "blog" } }];
+
+  return categories.map(cat => ({ params: { category: cat } }));
+}
+
+// capturar categoria e posts filtrados
 const { category } = Astro.params;
 const posts = await getCollection("blog");
-
-// Filtra posts com categoria igual ao slug
 const filtered = posts.filter(
   p =>
     p.data.category &&
     p.data.category.toLowerCase().replace(/\s+/g, "-") === category
 );
 
+// textos multilíngues
 const labels = {
   en: { title: "Category", none: "No posts in this category." },
   es: { title: "Categoría", none: "No hay publicaciones en esta categoría." },
@@ -45,7 +63,7 @@ const title = `${L.title}: ${category}`;
         {filtered.map(post => (
           <article style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;">
             {post.data.heroImage && (
-              <a href={`/blog/${post.slug}/`}>
+              <a href={`/${post.slug}/`}>
                 <img
                   src={post.data.heroImage}
                   alt={post.data.title}
@@ -56,7 +74,7 @@ const title = `${L.title}: ${category}`;
             <div style="padding:1rem;">
               <h2 style="margin:0;">
                 <a
-                  href={`/blog/${post.slug}/`}
+                  href={`/${post.slug}/`}
                   style="color: var(--accent); text-decoration:none; font-weight:600;"
                 >
                   {post.data.title}
