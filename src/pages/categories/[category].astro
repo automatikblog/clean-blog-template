@@ -1,29 +1,33 @@
 ---
 import Base from "../../layouts/Base.astro";
-import { getCollection } from "astro:content";
 import FormattedDate from "../../components/FormattedDate.astro";
+import fs from "fs";
+import path from "path";
 
-// 🚀 Gerar todas as categorias automaticamente no build
+// === 🚀 Gera rotas de categorias no build ===
 export async function getStaticPaths() {
-  const posts = await getCollection("blog");
+  const dir = path.resolve("src/content/blog");
+  const files = fs.readdirSync(dir).filter(f => f.endsWith(".md"));
 
-  // Gera lista única de categorias (normalizadas)
-  const categories = [...new Set(
-    posts
-      .map((p) =>
-        p.data.category
-          ?.toLowerCase()
-          .normalize("NFD")
-          .replace(/\p{Mn}/gu, "")
-          .replace(/\s+/g, "-")
-      )
-      .filter(Boolean)
-  )];
+  const categories = new Set();
 
-  return categories.map((category) => ({ params: { category } }));
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(dir, file), "utf-8");
+    const match = content.match(/category:\s*"?(.+?)"?\s*(\r?\n|$)/);
+    if (match) {
+      const cat = match[1]
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Mn}/gu, "")
+        .replace(/\s+/g, "-");
+      categories.add(cat);
+    }
+  }
+
+  return [...categories].map(category => ({ params: { category } }));
 }
 
-// Textos multilíngues
+// === 🗣️ Textos multilíngues ===
 const labels = {
   en: { title: "Category", none: "No posts in this category." },
   es: { title: "Categoría", none: "No hay publicaciones en esta categoría." },
@@ -34,38 +38,41 @@ const { category } = Astro.params;
 const lang = "pt";
 const L = labels[lang] || labels.en;
 
-// Carrega todos os posts
-const posts = await getCollection("blog");
+// === 📂 Carrega todos os posts do diretório ===
+const dir = path.resolve("src/content/blog");
+const files = fs.readdirSync(dir).filter(f => f.endsWith(".md"));
 
-// Normaliza o slug da URL
-const slug = category
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/\p{Mn}/gu, "")
-  .replace(/\s+/g, "-");
+const posts = [];
 
-// Filtra posts dessa categoria
-const filtered = posts.filter(
-  (p) =>
-    p.data.category &&
-    p.data.category
+for (const file of files) {
+  const raw = fs.readFileSync(path.join(dir, file), "utf-8");
+  const match = raw.match(/category:\s*"?(.+?)"?\s*(\r?\n|$)/);
+  const title = raw.match(/title:\s*"?(.+?)"?\s*(\r?\n|$)/);
+  const hero = raw.match(/heroImage:\s*"?(.+?)"?\s*(\r?\n|$)/);
+  const date = raw.match(/pubDate:\s*"?(.+?)"?\s*(\r?\n|$)/);
+
+  if (match && match[1]) {
+    const slug = match[1]
       .toLowerCase()
       .normalize("NFD")
       .replace(/\p{Mn}/gu, "")
-      .replace(/\s+/g, "-") === slug
-);
+      .replace(/\s+/g, "-");
 
-const displayName =
-  posts.find(
-    (p) =>
-      p.data.category &&
-      p.data.category
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/\p{Mn}/gu, "")
-        .replace(/\s+/g, "-") === slug
-  )?.data.category || category;
+    posts.push({
+      title: title ? title[1] : file,
+      category: match[1],
+      heroImage: hero ? hero[1] : null,
+      pubDate: date ? date[1] : null,
+      slug: file.replace(/\.md$/, ""),
+      categorySlug: slug,
+    });
+  }
+}
 
+// === 🔍 Filtra posts da categoria atual ===
+const filtered = posts.filter((p) => p.categorySlug === category);
+
+const displayName = filtered[0]?.category || category;
 const title = `${L.title}: ${displayName}`;
 ---
 
@@ -88,14 +95,12 @@ const title = `${L.title}: ${displayName}`;
         "
       >
         {filtered.map((post) => (
-          <article
-            style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;"
-          >
-            {post.data.heroImage && (
+          <article style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;">
+            {post.heroImage && (
               <a href={`/${post.slug}/`}>
                 <img
-                  src={post.data.heroImage}
-                  alt={post.data.title}
+                  src={post.heroImage}
+                  alt={post.title}
                   style="width:100%; height:180px; object-fit:cover;"
                 />
               </a>
@@ -106,11 +111,11 @@ const title = `${L.title}: ${displayName}`;
                   href={`/${post.slug}/`}
                   style="color: var(--accent); text-decoration:none; font-weight:600;"
                 >
-                  {post.data.title}
+                  {post.title}
                 </a>
               </h2>
               <p style="color: gray; font-size:0.9rem; margin-top:0.4rem;">
-                <FormattedDate date={post.data.pubDate} />
+                {post.pubDate && <FormattedDate date={post.pubDate} />}
               </p>
             </div>
           </article>
