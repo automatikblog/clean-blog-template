@@ -6,14 +6,24 @@ import FormattedDate from "../../components/FormattedDate.astro";
 // 🚀 Gerar todas as categorias automaticamente no build
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
-  const categories = [...new Set(
-    posts.map(p => p.data.category?.toLowerCase().replace(/\s+/g, "-"))
-  )].filter(Boolean);
 
-  return categories.map(category => ({ params: { category } }));
+  // Gera lista única de categorias (normalizadas)
+  const categories = [...new Set(
+    posts
+      .map((p) =>
+        p.data.category
+          ?.toLowerCase()
+          .normalize("NFD")
+          .replace(/\p{Mn}/gu, "")
+          .replace(/\s+/g, "-")
+      )
+      .filter(Boolean)
+  )];
+
+  return categories.map((category) => ({ params: { category } }));
 }
 
-// textos multilíngues
+// Textos multilíngues
 const labels = {
   en: { title: "Category", none: "No posts in this category." },
   es: { title: "Categoría", none: "No hay publicaciones en esta categoría." },
@@ -24,20 +34,41 @@ const { category } = Astro.params;
 const lang = "pt";
 const L = labels[lang] || labels.en;
 
-// obtém todos os posts do diretório "blog"
+// Carrega todos os posts
 const posts = await getCollection("blog");
 
-// normaliza o slug
-const slug = category.toLowerCase();
+// Normaliza o slug da URL
+const slug = category
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/\p{Mn}/gu, "")
+  .replace(/\s+/g, "-");
 
-// filtra os posts dessa categoria
-const filtered = posts.filter((p) =>
-  p.data.category &&
-  p.data.category.toLowerCase().replace(/\s+/g, "-") === slug
+// Filtra posts dessa categoria
+const filtered = posts.filter(
+  (p) =>
+    p.data.category &&
+    p.data.category
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Mn}/gu, "")
+      .replace(/\s+/g, "-") === slug
 );
 
-const title = `${L.title}: ${slug}`;
+const displayName =
+  posts.find(
+    (p) =>
+      p.data.category &&
+      p.data.category
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Mn}/gu, "")
+        .replace(/\s+/g, "-") === slug
+  )?.data.category || category;
+
+const title = `${L.title}: ${displayName}`;
 ---
+
 <Base title={title}>
   <section style="padding: 3rem 1rem;">
     <h1 style="text-align:center; font-size:2rem; font-weight:700;">{title}</h1>
@@ -57,7 +88,9 @@ const title = `${L.title}: ${slug}`;
         "
       >
         {filtered.map((post) => (
-          <article style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;">
+          <article
+            style="border-radius: 12px; overflow: hidden; box-shadow: var(--box-shadow); background: white;"
+          >
             {post.data.heroImage && (
               <a href={`/${post.slug}/`}>
                 <img
