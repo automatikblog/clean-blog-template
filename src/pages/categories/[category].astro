@@ -7,14 +7,39 @@ import FormattedDate from "../../components/FormattedDate.astro";
 import Header from "../../components/Header.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../../consts";
 
-// pega o parâmetro da URL
-const { category } = Astro.params;
+// 🚀 ensure /categories/blog/ always exists
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const categories = [
+    "blog", // <- default permanent category
+    ...new Set(
+      posts
+        .map((p) =>
+          p.data.category
+            ?.toLowerCase()
+            .normalize("NFD")
+            .replace(/\p{Mn}/gu, "")
+            .replace(/\s+/g, "-")
+        )
+        .filter(Boolean)
+    ),
+  ];
 
-// carrega e filtra os posts pela categoria
+  // remove duplicates just in case
+  const unique = [...new Set(categories)];
+  return unique.map((category) => ({ params: { category } }));
+}
+
 const posts = (await getCollection("blog"))
+  .map((p) => {
+    // If the post has no category or invalid one, fallback to Blog
+    const raw = p.data.category || "Blog";
+    const cat = raw.toLowerCase().replace(/\s+/g, "-");
+    return { ...p, normalizedCat: cat };
+  })
   .filter((p) => {
-    const cat = p.data.category?.toLowerCase().replace(/\s+/g, "-");
-    return cat === category.toLowerCase();
+    if (safeCategory === "blog") return true; // all posts
+    return p.normalizedCat === safeCategory;
   })
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
