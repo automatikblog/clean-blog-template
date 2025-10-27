@@ -2,10 +2,16 @@
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 import FormattedDate from "../../components/FormattedDate.astro";
-import fs from "fs";
 
-// 🚀 Ativa modo dinâmico (sem rebuild)
-export const prerender = false;
+// 🚀 Gerar todas as categorias automaticamente no build
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const categories = [...new Set(
+    posts.map(p => p.data.category?.toLowerCase().replace(/\s+/g, "-"))
+  )].filter(Boolean);
+
+  return categories.map(category => ({ params: { category } }));
+}
 
 // textos multilíngues
 const labels = {
@@ -14,48 +20,24 @@ const labels = {
   pt: { title: "Categoria", none: "Nenhum post nesta categoria." },
 };
 
-// capturar categoria da URL
 const { category } = Astro.params;
 const lang = "pt";
 const L = labels[lang] || labels.en;
 
-// lê categorias do JSON atualizado
-let categories = [];
-try {
-  const json = fs.readFileSync("src/data/categories.json", "utf-8");
-  categories = JSON.parse(json);
-} catch (err) {
-  console.error("Erro ao ler categories.json", err);
-}
-
-// encontra categoria correspondente
-const currentCat = categories.find(
-  (c) => c.slug.toLowerCase() === category.toLowerCase()
-);
-
-// se não encontrar categoria
-if (!currentCat) {
-  return new Response(
-    `<h1 style="text-align:center;margin-top:4rem;">${L.title}: ${category}</h1>
-     <p style="text-align:center;">${L.none}</p>`,
-    { headers: { "Content-Type": "text/html" }, status: 404 }
-  );
-}
-
-// obtém posts em tempo real
+// obtém todos os posts do diretório "blog"
 const posts = await getCollection("blog");
 
-// filtra os posts por categoria
-const filtered = posts.filter(
-  (p) =>
-    p.data.category &&
-    p.data.category.toLowerCase().replace(/\s+/g, "-") ===
-      currentCat.slug.toLowerCase()
+// normaliza o slug
+const slug = category.toLowerCase();
+
+// filtra os posts dessa categoria
+const filtered = posts.filter((p) =>
+  p.data.category &&
+  p.data.category.toLowerCase().replace(/\s+/g, "-") === slug
 );
 
-const title = `${L.title}: ${currentCat.name}`;
+const title = `${L.title}: ${slug}`;
 ---
-
 <Base title={title}>
   <section style="padding: 3rem 1rem;">
     <h1 style="text-align:center; font-size:2rem; font-weight:700;">{title}</h1>
