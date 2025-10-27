@@ -30,20 +30,26 @@ export async function getStaticPaths() {
   return unique.map((category) => ({ params: { category } }));
 }
 
+// 🧠 Get current category from URL
+const { category } = Astro.params;
+const safeCategory = category?.toLowerCase() || "blog";
+
+// 🔍 Load and filter posts
 const posts = (await getCollection("blog"))
   .map((p) => {
-    // If the post has no category or invalid one, fallback to Blog
+    // Fallback to Blog if no category defined
     const raw = p.data.category || "Blog";
     const cat = raw.toLowerCase().replace(/\s+/g, "-");
     return { ...p, normalizedCat: cat };
   })
   .filter((p) => {
-    if (safeCategory === "blog") return true; // all posts
+    // If we're in /categories/blog → show all posts
+    if (safeCategory === "blog") return true;
     return p.normalizedCat === safeCategory;
   })
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-// formata o título da categoria (ex: "Categoria: Automation")
+// 🏷️ Category title for header
 const categoryTitle =
   posts[0]?.data.category || category.charAt(0).toUpperCase() + category.slice(1);
 const pageTitle = `Categoria: ${categoryTitle}`;
@@ -130,7 +136,9 @@ const pageTitle = `Categoria: ${categoryTitle}`;
     <Header />
     <main>
       <section>
-        <h1 style="text-align:center; font-size:2rem; font-weight:700; margin-bottom:2rem;">
+        <h1
+          style="text-align:center; font-size:2rem; font-weight:700; margin-bottom:2rem;"
+        >
           {pageTitle}
         </h1>
 
