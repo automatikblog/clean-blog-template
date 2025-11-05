@@ -54,25 +54,13 @@ h3 { font-size: 1.953em; }
 h4 { font-size: 1.563em; }
 h5 { font-size: 1.25em; }
 
-strong, b {
-	font-weight: 700;
-}
+strong, b { font-weight: 700; }
 
-a {
-	color: var(--accent);
-}
+a { color: var(--accent); }
+a:hover { color: var(--accent-dark); }
 
-a:hover {
-	color: var(--accent-dark);
-}
-
-p {
-	margin-bottom: 1em;
-}
-
-.prose p {
-	margin-bottom: 2em;
-}
+p { margin-bottom: 1em; }
+.prose p { margin-bottom: 2em; }
 
 textarea,
 input {
@@ -80,13 +68,20 @@ input {
 	font-size: 16px;
 }
 
-/* === Markdown Tables (GitHub-like) === */
+/* === Markdown Tables (GitHub-like + responsive) === */
 table {
 	width: 100%;
 	border-collapse: collapse;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 8px;
 	margin: 1.25rem 0;
 	font-size: 0.985rem;
+	display: block;               /* enable horizontal scroll on small screens */
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
+
+table * { box-sizing: border-box; }
 
 thead th {
 	background: #f8fafc;
@@ -94,20 +89,27 @@ thead th {
 	color: rgb(var(--black));
 }
 
-th,
-td {
+th, td {
 	border: 1px solid rgb(var(--gray-light));
 	padding: .6rem .8rem;
 	vertical-align: top;
+	text-align: left;             /* default left; align attr rules below can override */
+	white-space: normal;          /* allow wrapping inside cells */
 }
 
-tbody tr:nth-child(even) {
-	background: #fbfbfc;
-}
+tbody tr:nth-child(even) { background: #fbfbfc; }
 
 /* honor alignment from Markdown renderers that emit align attrs */
 th[align="right"], td[align="right"] { text-align: right; }
 th[align="center"], td[align="center"] { text-align: center; }
+
+caption {
+	caption-side: bottom;
+	text-align: left;
+	font-size: .9rem;
+	color: rgb(var(--gray));
+	padding: .4rem .2rem 0;
+}
 
 img {
 	max-width: 100%;
@@ -124,11 +126,10 @@ code {
 pre {
 	padding: 1.5em;
 	border-radius: 8px;
+	overflow: auto;
 }
 
-pre > code {
-	all: unset;
-}
+pre > code { all: unset; }
 
 blockquote {
 	border-left: 4px solid var(--accent);
@@ -147,6 +148,7 @@ hr {
 	main { padding: 1em; }
 }
 
+/* Screen-reader only utility */
 .sr-only {
 	border: 0;
 	padding: 0;
@@ -161,11 +163,9 @@ hr {
 }
 
 /* ===============================
-   ✅ REAL RESPONSIVE FIXES
-   Makes theme usable on mobile
+   ✅ Real responsive fixes
    =============================== */
 @media (max-width: 768px) {
-
 	html, body {
 		font-size: 92%;
 		overflow-x: hidden;
