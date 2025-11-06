@@ -67,6 +67,7 @@ textarea, input {
 .table-container {
 	width: 100%;
 	overflow-x: auto;
+	display: block;
 }
 
 .table-container table {
@@ -75,6 +76,8 @@ textarea, input {
 	margin: 1.25rem 0;
 	font-size: 0.985rem;
 	table-layout: auto !important;
+	display: table;
+	border-spacing: 0;
 }
 
 thead th,
@@ -89,15 +92,16 @@ th, td {
 	border: 1px solid rgb(var(--gray-light));
 	padding: .6rem .8rem;
 	vertical-align: top;
-	text-align: left;
+	text-align: left !important;
 	word-wrap: break-word !important;
 	white-space: normal !important;
 }
 
 tbody tr:nth-child(even) { background: #fbfbfc; }
 
-th[align="right"], td[align="right"] { text-align: right; }
-th[align="center"], td[align="center"] { text-align: center; }
+th[align="right"], td[align="right"] { text-align: right !important; }
+th[align="center"], td[align="center"] { text-align: center !important; }
+
 
 th, td {
   text-align: left !important;
