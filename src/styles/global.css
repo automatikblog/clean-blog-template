@@ -99,10 +99,14 @@ tbody tr:nth-child(even) { background: #fbfbfc; }
 th[align="right"], td[align="right"] { text-align: right; }
 th[align="center"], td[align="center"] { text-align: center; }
 
+th, td {
+  text-align: left !important;
+}
+
 img, video {
-	max-width: 100%;
-	height: auto;
-	border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
 }
 
 code {
