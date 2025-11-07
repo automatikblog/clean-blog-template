@@ -11,14 +11,18 @@ export async function GET(context) {
     site: context.site,
     items: posts.map((post) => ({
       title: post.data.title,
-      description: post.data.description || post.data.metaDescription,
+      description: post.data.description || post.data.metaDescription || "",
       link: `/blog/${post.id}/`,
-      pubDate: post.data.pubDate,
-      // Optional media tag for Google Discover / News
+      pubDate: new Date(post.data.pubDate),
       customData: post.data.heroImage
         ? `<media:content url="${post.data.heroImage}" medium="image" />`
         : "",
     })),
+    // ✅ Define proper XML namespaces and metadata
+    xmlns: {
+      atom: "http://www.w3.org/2005/Atom",
+      media: "http://search.yahoo.com/mrss/",
+    },
     customData: `
       <language>${SITE_LANGUAGE}</language>
       <image>
