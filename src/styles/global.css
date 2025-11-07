@@ -64,6 +64,7 @@ textarea, input {
 	font-size: 16px;
 }
 
+/* === Enhanced Table Styling (Restored) === */
 .table-container {
 	width: 100%;
 	overflow-x: auto;
@@ -80,6 +81,7 @@ textarea, input {
 	border-spacing: 0;
 }
 
+/* Header styling */
 thead th,
 table tr:first-child th,
 table tr:first-child td {
@@ -88,23 +90,31 @@ table tr:first-child td {
 	color: rgb(var(--black));
 }
 
-th, td {
+/* Cells */
+th,
+td {
 	border: 1px solid rgb(var(--gray-light));
-	padding: .6rem .8rem;
+	padding: 0.6rem 0.8rem;
 	vertical-align: top;
 	text-align: left !important;
 	word-wrap: break-word !important;
 	white-space: normal !important;
 }
 
-tbody tr:nth-child(even) { background: #fbfbfc; }
+/* Alternating row colors */
+tbody tr:nth-child(even) {
+	background: #fbfbfc;
+}
 
-th[align="right"], td[align="right"] { text-align: right !important; }
-th[align="center"], td[align="center"] { text-align: center !important; }
+/* Alignment attributes */
+th[align="right"],
+td[align="right"] {
+	text-align: right !important;
+}
 
-
-th, td {
-  text-align: left !important;
+th[align="center"],
+td[align="center"] {
+	text-align: center !important;
 }
 
 img, video {
