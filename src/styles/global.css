@@ -204,3 +204,55 @@ hr {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+.nav-dropdown-list {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  background: rgba(var(--black), 0.04); /* leve transparência */
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  padding: 0.5rem 0;
+  z-index: 100;
+  list-style: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.nav-dropdown:hover .nav-dropdown-list {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nav-dropdown-list li {
+  margin: 0;
+}
+
+.nav-dropdown-list a {
+  display: block;
+  padding: 0.8rem 1.2rem;
+  color: rgba(var(--black), 0.8);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.25s ease, color 0.25s ease;
+  border-radius: 6px;
+}
+
+/* Hover com base na cor do menu */
+.nav-dropdown-list a:hover {
+  background: rgba(147, 112, 219, 0.15); /* tom lilás translúcido */
+  color: var(--accent);
+}
+
+/* Adaptativo para menus escuros */
+header[style*="background: #000"],
+header[style*="background: rgb(0,0,0)"],
+header[style*="background: var(--accent-dark)"] .nav-dropdown-list a:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
