@@ -5,54 +5,60 @@ import BaseHead from "../../components/BaseHead.astro";
 import Footer from "../../components/Footer.astro";
 import FormattedDate from "../../components/FormattedDate.astro";
 import Header from "../../components/Header.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../../consts";
+import { SITE_DESCRIPTION } from "../../consts";
 
-// 🚀 ensure /categories/blog/ always exists
-export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  const categories = [
-    "blog", // <- default permanent category
-    ...new Set(
-      posts
-        .map((p) =>
-          p.data.category
-            ?.toLowerCase()
-            .normalize("NFD")
-            .replace(/\p{Mn}/gu, "")
-            .replace(/\s+/g, "-")
-        )
-        .filter(Boolean)
-    ),
-  ];
-
-  // remove duplicates just in case
-  const unique = [...new Set(categories)];
-  return unique.map((category) => ({ params: { category } }));
+// --- helpers ---
+function slugifyCategory(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-// 🧠 Get current category from URL
+// 🚀 ensure /categories/blog/ always exists + generate all category paths
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const categories = new Set<string>(["blog"]);
+  posts.forEach((p) => {
+    const raw = p.data.category;
+    const slug = slugifyCategory(raw || "");
+    if (slug) categories.add(slug);
+  });
+  return [...categories].map((category) => ({ params: { category } }));
+}
+
+// 🧠 Get current category from URL (normalized like above)
 const { category } = Astro.params;
-const safeCategory = category?.toLowerCase() || "blog";
+const safeCategory = slugifyCategory(category || "blog");
 
 // 🔍 Load and filter posts
 const posts = (await getCollection("blog"))
   .map((p) => {
-    // Fallback to Blog if no category defined
-    const raw = p.data.category || "Blog";
-    const cat = raw.toLowerCase().replace(/\s+/g, "-");
-    return { ...p, normalizedCat: cat };
+    const raw = (p.data.category || "Blog")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "");
+    return { ...p, normalizedCat: slugifyCategory(raw) };
   })
   .filter((p) => {
-    // If we're in /categories/blog → show all posts
-    if (safeCategory === "blog") return true;
-    return p.normalizedCat === safeCategory;
-  })
+  if (safeCategory === "blog") return true;
+  const catSlug = slugifyCategory(p.data.category || "");
+  return catSlug === safeCategory;
+})
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 // 🏷️ Category title for header
 const categoryTitle =
-  posts[0]?.data.category || category.charAt(0).toUpperCase() + category.slice(1);
-const pageTitle = `Categoria: ${categoryTitle}`;
+  posts[0]?.data.category ||
+  (category
+    ? category
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Blog");
+const pageTitle = `Category: ${categoryTitle}`;
 ---
 
 <!doctype html>
@@ -136,9 +142,7 @@ const pageTitle = `Categoria: ${categoryTitle}`;
     <Header />
     <main>
       <section>
-        <h1
-          style="text-align:center; font-size:2rem; font-weight:700; margin-bottom:2rem;"
-        >
+        <h1 style="text-align:center; font-size:2rem; font-weight:700; margin-bottom:2rem;">
           {pageTitle}
         </h1>
 
@@ -159,7 +163,7 @@ const pageTitle = `Categoria: ${categoryTitle}`;
             ))}
           </ul>
         ) : (
-          <p style="text-align:center;">Nenhum post encontrado nesta categoria.</p>
+          <p style="text-align:center;">No posts found in this category.</p>
         )}
       </section>
     </main>
