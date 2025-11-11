@@ -2,7 +2,6 @@
 import Base from "../../layouts/Base.astro";
 import { getCollection } from "astro:content";
 
-// coleta todos os posts e cria lista única de categorias
 const posts = await getCollection("blog");
 
 const categories = [...new Set(
@@ -11,7 +10,7 @@ const categories = [...new Set(
     .filter(Boolean)
 )];
 
-const title = "Categorias";
+const title = "Categories";
 ---
 
 <Base title={title}>
@@ -20,7 +19,13 @@ const title = "Categorias";
 
     <ul style="list-style:none; padding:0; margin-top:2rem;">
       {categories.map((cat) => {
-        const slug = cat.toLowerCase().replace(/\s+/g, "-");
+        const slug = cat
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/\s+/g, "-")
+  .replace(/[^a-z0-9-]/g, "")
+  .replace(/-+/g, "-");
         return (
           <li style="margin: 0.5rem 0;">
             <a href={`/categories/${slug}/`} style="color: var(--accent); font-weight:600;">
