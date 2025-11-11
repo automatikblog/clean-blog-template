@@ -31,6 +31,11 @@ body {
 	line-height: 1.7;
 }
 
+/* NOVO: Impede a rolagem do conteúdo principal quando o menu mobile está aberto */
+body.menu-open {
+  overflow: hidden;
+}
+
 main {
 	width: 720px;
 	max-width: calc(100% - 2em);
@@ -245,7 +250,7 @@ hr {
 
 /* Hover com base na cor do menu */
 .nav-dropdown-list a:hover {
-  background: rgba(147, 112, 219, 0.15); /* tom lilás translúcido */
+  background: rgb(144, 103, 228); /* tom lilás translúcido */
   color: var(--accent);
 }
 
