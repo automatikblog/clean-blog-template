@@ -10,48 +10,59 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "../../consts";
 // 🚀 ensure /categories/blog/ always exists
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
-  const categories = [
-    "blog", // <- default permanent category
-    ...new Set(
-      posts
-        .map((p) =>
-          p.data.category
-            ?.toLowerCase()
-            .normalize("NFD")
-            .replace(/\p{Mn}/gu, "")
-            .replace(/\s+/g, "-")
-        )
-        .filter(Boolean)
-    ),
-  ];
 
-  // remove duplicates just in case
-  const unique = [...new Set(categories)];
-  return unique.map((category) => ({ params: { category } }));
+  // Mapeia categorias únicas (slug + nome original)
+  const categoryMap = new Map();
+  categoryMap.set("blog", { category: "blog", originalName: "Blog" });
+
+  posts.forEach((p) => {
+    const raw = p.data.category;
+    if (raw) {
+      const slug = raw
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Mn}/gu, "")
+        .replace(/\s+/g, "-");
+      if (!categoryMap.has(slug)) {
+        categoryMap.set(slug, {
+          category: slug,
+          originalName: raw,
+        });
+      }
+    }
+  });
+
+  return Array.from(categoryMap.values()).map((item) => ({
+    params: { category: item.category },
+    props: { originalCategoryName: item.originalName },
+  }));
 }
 
 // 🧠 Get current category from URL
 const { category } = Astro.params;
-const safeCategory = category?.toLowerCase() || "blog";
+
+// 🎁 Get original name from props
+const { originalCategoryName } = Astro.props;
+
+// Filtro base
+const filterKey = originalCategoryName?.toLowerCase() || "blog";
 
 // 🔍 Load and filter posts
 const posts = (await getCollection("blog"))
-  .map((p) => {
-    // Fallback to Blog if no category defined
-    const raw = p.data.category || "Blog";
-    const cat = raw.toLowerCase().replace(/\s+/g, "-");
-    return { ...p, normalizedCat: cat };
-  })
+  .map((p) => ({
+    ...p,
+    normalizedCat: (p.data.category || "Blog").toLowerCase(),
+  }))
   .filter((p) => {
-    // If we're in /categories/blog → show all posts
-    if (safeCategory === "blog") return true;
-    return p.normalizedCat === safeCategory;
+    if (category === "blog") return true;
+    return p.normalizedCat === filterKey;
   })
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 // 🏷️ Category title for header
 const categoryTitle =
-  posts[0]?.data.category || category.charAt(0).toUpperCase() + category.slice(1);
+  originalCategoryName ||
+  category.charAt(0).toUpperCase() + category.slice(1);
 const pageTitle = `Categoria: ${categoryTitle}`;
 ---
 
@@ -70,7 +81,7 @@ const pageTitle = `Categoria: ${categoryTitle}`;
         display: flex;
         flex-wrap: wrap;
         gap: 2rem;
-        list-style-type: none;
+        list-style: none;
         margin: 0;
         padding: 0;
       }
@@ -112,7 +123,7 @@ const pageTitle = `Categoria: ${categoryTitle}`;
       ul li a:hover .date {
         color: rgb(var(--accent));
       }
-      ul a:hover img {
+      ul li a:hover img {
         box-shadow: var(--box-shadow);
       }
       @media (max-width: 720px) {
@@ -148,7 +159,12 @@ const pageTitle = `Categoria: ${categoryTitle}`;
               <li>
                 <a href={`/blog/${post.id}/`}>
                   {post.data.heroImage && (
-                    <Image width={720} height={360} src={post.data.heroImage} alt="" />
+                    <Image
+                      width={720}
+                      height={360}
+                      src={post.data.heroImage}
+                      alt=""
+                    />
                   )}
                   <h4 class="title">{post.data.title}</h4>
                   <p class="date">
